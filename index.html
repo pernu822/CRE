@@ -13,18 +13,73 @@
 </body>
 <script>
 
-    const jsPsych = initJsPsych({
-        on_finish: function() {
-            jsPsych.data.displayData()
-        }
-    })
-
-    const test1 = {
-        type: jsPsychHtmlKeyboardResponse,
-        stimulus: `<h1>Welcome to this experiment!</h1>`
+  // Getting FPS
+  if (!window.requestAnimationFrame) {
+        window.requestAnimationFrame =
+            window.mozRequestAnimationFrame ||
+            window.webkitRequestAnimationFrame;
     }
-    
-    jsPsych.run([test1])
 
+    let prevTime = performance.now();
+    let frameCount = 0;
+    let animateAnimationFrameId = null;
+
+    function animate(now) {
+        const currentTime = performance.now();
+        const deltaTime = currentTime - prevTime;
+        frameCount++;
+
+        if (deltaTime >= 1000) {
+            const fps = Math.round((frameCount * 1000) / deltaTime);
+            frameCount = 0;
+            prevTime = currentTime;
+
+            const fpsContainer = document.querySelector('.fps');
+            if (fpsContainer) {
+                fpsContainer.innerHTML = `FPS: ${fps}`;
+            }
+        }
+
+        animateAnimationFrameId = requestAnimationFrame(animate);
+    }
+
+    // Start the FPS calculation loop
+    animateAnimationFrameId = requestAnimationFrame(animate);
+
+    function startExperiment() {
+        const jsPsych = initJsPsych({
+            use_webaudio: false,
+            on_finish: function () {
+                jsPsych.data.displayData();
+            },
+        });
+
+        let timeline = [];
+        const welcome = {
+            type: jsPsychHtmlKeyboardResponse,
+            choices: [' '],
+            stimulus: `<h1>Welcome to this experiment!</h1>`,
+            trial_duration: 4000,
+        };
+        timeline.push(welcome);
+
+        const instructions = {
+            type: jsPsychHtmlKeyboardResponse,
+            choices: [' '],
+            stimulus: `
+                <h1>Instructions</h1><br>
+                <p>You will now be presented with a series of photos.
+                Please pay close attention to these faces.
+                Your memory for the faces will be assessed later in the experiment.</p><br>
+                <aside>Please press the spacebar to begin</aside><br>
+                <div class='fps'></div>`,
+        };
+
+        timeline.push(instructions);
+
+        jsPsych.run(timeline);
+    }
+
+    window.onload = startExperiment;
 </script>
 </html>
